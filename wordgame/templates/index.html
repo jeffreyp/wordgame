@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordGrid - Two Player Word Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <h1>WordGrid</h1>
+    <p>Find words in the grid and score points!</p>
+    
+    <!-- Welcome Screen -->
+    <div id="welcome-screen" class="screen">
+        <h2>Welcome to WordGrid</h2>
+        <div class="input-group">
+            <label for="player-name">Your Name:</label>
+            <input type="text" id="player-name" placeholder="Enter your name">
+        </div>
+        
+        <button id="create-game">Create New Game</button>
+        
+        <h3>or</h3>
+        
+        <div class="input-group">
+            <label for="join-room-code">Join Existing Game:</label>
+            <input type="text" id="join-room-code" placeholder="Enter room code">
+        </div>
+        
+        <button id="join-game">Join Game</button>
+    </div>
+    
+    <!-- Waiting Screen -->
+    <div id="waiting-screen" class="screen">
+        <h2>Waiting for Players</h2>
+        <p>Share this room code with another player:</p>
+        <div class="room-code" id="room-code-display">XXXX</div>
+        
+        <h3>Players:</h3>
+        <div class="players-list" id="players-waiting"></div>
+        
+        <p>Game will start automatically when another player joins.</p>
+    </div>
+    
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <div class="game-header">
+            <div class="scores">
+                <div class="score-container">
+                    <div>You</div>
+                    <div class="score" id="player-score">0</div>
+                </div>
+                <div class="score-container">
+                    <div>Opponent</div>
+                    <div class="score" id="opponent-score">0</div>
+                </div>
+            </div>
+            
+            <div class="timer" id="timer">1:00</div>
+        </div>
+        
+        <div class="grid-container" id="grid-container"></div>
+        
+        <div class="word-input-container">
+            <input type="text" id="word-input" placeholder="Type a word (3+ letters)">
+            <button id="submit-word">Submit</button>
+        </div>
+        
+        <div class="word-list">
+            <h3>Words Found:</h3>
+            <ul id="found-words"></ul>
+        </div>
+        
+        <div id="game-message" class="message"></div>
+    </div>
+    
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="screen">
+        <h2>Game Over!</h2>
+        
+        <div id="game-results"></div>
+        
+        <button id="play-again">Play Again</button>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html>

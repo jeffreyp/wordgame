@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordGrid - Two Player Word Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <h1>WordGrid</h1>
+    <p>Find words in the grid and score points!</p>
+    
+    <!-- Welcome Screen -->
+    <div id="welcome-screen" class="screen">
+        <h2>Welcome to WordGrid</h2>
+        <div class="input-group">
+            <label for="player-name">Your Name:</label>
+            <input type="text" id="player-name" placeholder="Enter your name">
+        </div>
+        
+        <button id="create-game">Create New Game</button>
+        
+        <h3>or</h3>
+        
+        <div class="input-group">
+            <label for="join-room-code">Join Existing Game:</label>
+            <input type="text" id="join-room-code" placeholder="Enter room code">
+        </div>
+        
+        <button id="join-game">Join Game</button>
+    </div>
+    
+    <!-- Waiting Screen -->
+    <div id="waiting-screen" class="screen">
+        <h2>Waiting for Players</h2>
+        <p>Share this room code with another player:</p>
+        <div class="room-code" id="room-code-display">XXXX</div>
+        
+        <h3>Players:</h3>
+        <div class="players-list" id="players-waiting"></div>
+        
+        <p>Game will start automatically when another player joins.</p>
+    </div>
+    
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <div class="game-header">
+            <div class="scores">
+                <div class="score-container">
+                    <div>You</div>
+                    <div class="score" id="player-score">0</div>
+                </div>
+                <div class="score-container">
+                    <div>Opponent</div>
+                    <div class="score" id="opponent-score">0</div>
+                </div>
+            </div>
+            
+            <div class="timer" id="timer">1:00</div>
+        </div>
+        
+        <div class="grid-container" id="grid-container"></div>
+        
+        <div class="word-input-container">
+            <input type="text" id="word-input" placeholder="Type a word (3+ letters)">
+            <button id="submit-word">Submit</button>
+        </div>
+        
+        <div class="word-list">
+            <h3>Words Found:</h3>
+            <ul id="found-words"></ul>
+        </div>
+        
+        <div id="game-message" class="message"></div>
+    </div>
+    
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="screen">
+        <h2>Game Over!</h2>
+        
+        <div id="game-results"></div>
+        
+        <button id="play-again">Play Again</button>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let playerId = null;
+            let roomCode = null;
+            let gameGrid = null;
+            let timerInterval = null;
+            let foundWords = new Set();
+            let gameStatusInterval = null;
+
+            // DOM elements
+            const welcomeScreen = document.getElementById('welcome-screen');
+            const createGameBtn = document.getElementById('create-game');
+            const joinGameBtn = document.getElementById('join-game');
+            const joinRoomInput = document.getElementById('join-room-code');
+            const playerNameInput = document.getElementById('player-name');
+            const waitingScreen = document.getElementById('waiting-screen');
+            const roomCodeDisplay = document.getElementById('room-code-display');
+            const playersWaiting = document.getElementById('players-waiting');
+            const gameScreen = document.getElementById('game-screen');
+            const gridContainer = document.getElementById('grid-container');
+            const wordInput = document.getElementById('word-input');
+            const submitWordBtn = document.getElementById('submit-word');
+            const playerScore = document.getElementById('player-score');
+            const opponentScore = document.getElementById('opponent-score');
+            const foundWordsList = document.getElementById('found-words');
+            const timer = document.getElementById('timer');
+            const gameOverScreen = document.getElementById('game-over-screen');
+            const gameResults = document.getElementById('game-results');
+            const playAgainBtn = document.getElementById('play-again');
+            const gameMessage = document.getElementById('game-message');
+
+            // Show welcome screen initially
+            showScreen(welcomeScreen);
+
+            // Event listeners
+            createGameBtn.addEventListener('click', () => {
+                const playerName = playerNameInput.value.trim() || 'Player';
+                
+                fetch('/api/create_game', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name: playerName }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    playerId = data.player_id;
+                    roomCode = data.room_code;
+                    roomCodeDisplay.textContent = roomCode;
+                    
+                    // Add player to waiting list
+                    const playerItem = document.createElement('div');
+                    playerItem.classList.add('player-item');
+                    playerItem.textContent = playerName;
+                    playersWaiting.appendChild(playerItem);
+                    
+                    showScreen(waitingScreen);
+                    startGameStatusPolling();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showMessage('Error creating game', 'error');
+                });
+            });
+
+            joinGameBtn.addEventListener('click', () => {
+                const roomCode = joinRoomInput.value.trim().toUpperCase();
+                const playerName = playerNameInput.value.trim() || 'Player';
+                
+                if (roomCode) {
+                    fetch('/api/join_game', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ room_code: roomCode, name: playerName }),
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(data => {
+                                throw new Error(data.error || 'Error joining game');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        playerId = data.player_id;
+                        roomCode = data.room_code;
+                        
+                        startGameStatusPolling();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showMessage(error.message, 'error');
+                    });
+                } else {
+                    showMessage('Please enter a valid room code', 'error');
+                }
+            });
+
+            submitWordBtn.addEventListener('click', submitWord);
+            wordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    submitWord();
+                }
+            });
+
+            playAgainBtn.addEventListener('click', () => {
+                fetch('/api/restart_game', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({}),
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.error || 'Error restarting game');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Game restarted successfully, status polling will handle the rest
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showMessage(error.message, 'error');
+                });
+            });
+
+            // Polling for game status
+            function startGameStatusPolling() {
+                // Clear existing interval if any
+                if (gameStatusInterval) {
+                    clearInterval(gameStatusInterval);
+                }
+                
+                // Poll every second
+                gameStatusInterval = setInterval(checkGameStatus, 1000);
+                
+                // Initial check
+                checkGameStatus();
+            }
+
+            function checkGameStatus() {
+                fetch('/api/game_status')
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(data => {
+                                throw new Error(data.error || 'Error checking game status');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        handleGameStatus(data);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        // Don't show error message for every failed poll
+                    });
+            }
+
+            function handleGameStatus(data) {
+                const status = data.status;
+                
+                if (status === 'waiting') {
+                    // Update players list
+                    updatePlayersList(data.players);
+                    showScreen(waitingScreen);
+                }
+                else if (status === 'playing') {
+                    if (!gameGrid) {
+                        // First time switching to playing state
+                        gameGrid = data.grid;
+                        createGameGrid(gameGrid);
+                        resetGameState();
+                        showScreen(gameScreen);
+                    }
+                    
+                    // Update scores
+                    updateScores(data.players);
+                    
+                    // Update timer
+                    const timeLeft = Math.max(0, Math.floor(data.end_time - (Date.now() / 1000)));
+                    timer.textContent = formatTime(timeLeft);
+                    
+                    if (timeLeft <= 10) {
+                        timer.classList.add('urgent');
+                    }
+                }
+                else if (status === 'finished') {
+                    // Game ended
+                    clearInterval(timerInterval);
+                    
+                    // Generate results HTML
+                    let resultsHTML = '<h3>Game Results</h3>';
+                    
+                    for (const [id, player] of Object.entries(data.players)) {
+                        const isYou = parseInt(id) === playerId;
+                        const isWinner = data.winners.includes(parseInt(id));
+                        
+                        resultsHTML += `<div class="player-result ${isYou ? 'you' : ''} ${isWinner ? 'winner' : ''}">`;
+                        resultsHTML += `<h4>${player.name} ${isYou ? '(You)' : ''} ${isWinner ? '🏆' : ''}</h4>`;
+                        resultsHTML += `<p>Score: ${player.score}</p>`;
+                        
+                        if (player.words.length > 0) {
+                            resultsHTML += '<p>Words found:</p><ul>';
+                            player.words.forEach(word => {
+                                resultsHTML += `<li>${word}</li>`;
+                            });
+                            resultsHTML += '</ul>';
+                        } else {
+                            resultsHTML += '<p>No words found</p>';
+                        }
+                        
+                        resultsHTML += '</div>';
+                    }
+                    
+                    // Set results and show game over screen
+                    gameResults.innerHTML = resultsHTML;
+                    showScreen(gameOverScreen);
+                    
+                    // Stop polling when game is finished
+                    clearInterval(gameStatusInterval);
+                }
+            }
+
+            function updatePlayersList(players) {
+                playersWaiting.innerHTML = '';
+                
+                Object.entries(players).forEach(([id, player]) => {
+                    const playerItem = document.createElement('div');
+                    playerItem.classList.add('player-item');
+                    playerItem.textContent = player.name;
+                    playersWaiting.appendChild(playerItem);
+                });
+            }
+
+            function updateScores(players) {
+                for (const [id, player] of Object.entries(players)) {
+                    if (parseInt(id) === playerId) {
+                        playerScore.textContent = player.score;
+                    } else {
+                        opponentScore.textContent = player.score;
+                    }
+                }
+            }
+
+            function submitWord() {
+                const word = wordInput.value.trim().toLowerCase();
+                
+                if (word.length >= 3) {
+                    fetch('/api/submit_word', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ word }),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.valid) {
+                            foundWords.add(data.word);
+                            playerScore.textContent = data.total_score;
+                            
+                            // Add word to list
+                            const wordItem = document.createElement('li');
+                            wordItem.textContent = `${data.word} (+${data.score})`;
+                            foundWordsList.appendChild(wordItem);
+                            
+                            showMessage(`Found "${data.word}" for ${data.score} points!`, 'success');
+                        } else {
+                            showMessage(`Invalid word: ${data.reason}`, 'error');
+                        }
+                        
+                        wordInput.value = '';
+                        wordInput.focus();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showMessage('Error submitting word', 'error');
+                    });
+                } else {
+                    showMessage('Word must be at least 3 letters', 'error');
+                }
+            }
+
+            // Helper functions
+            function showScreen(screen) {
+                // Hide all screens
+                [welcomeScreen, waitingScreen, gameScreen, gameOverScreen].forEach(s => {
+                    s.style.display = 'none';
+                });
+                
+                // Show the requested screen
+                screen.style.display = 'block';
+            }
+
+            function createGameGrid(grid) {
+                gridContainer.innerHTML = '';
+                
+                for (let i = 0; i < grid.length; i++) {
+                    for (let j = 0; j < grid[i].length; j++) {
+                        const cell = document.createElement('div');
+                        cell.classList.add('grid-cell');
+                        cell.textContent = grid[i][j].toUpperCase();
+                        gridContainer.appendChild(cell);
+                    }
+                }
+            }
+
+            function resetGameState() {
+                foundWords.clear();
+                foundWordsList.innerHTML = '';
+                playerScore.textContent = '0';
+                opponentScore.textContent = '0';
+                wordInput.value = '';
+            }
+
+            function formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            }
+
+            function showMessage(text, type = 'info') {
+                gameMessage.textContent = text;
+                gameMessage.className = `message ${type}`;
+                
+                // Clear message after 3 seconds
+                setTimeout(() => {
+                    gameMessage.textContent = '';
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>

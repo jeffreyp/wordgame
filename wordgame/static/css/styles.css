@@ -1,0 +1,272 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f5f5;
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+h1, h2, h3, h4 {
+    margin-bottom: 15px;
+    color: #2c3e50;
+}
+
+.screen {
+    display: none;
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+/* Welcome Screen */
+.input-group {
+    margin-bottom: 15px;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    margin-top: 5px;
+}
+
+button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 10px;
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
+/* Waiting Screen */
+.room-code {
+    font-size: 24px;
+    font-weight: bold;
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.players-list {
+    margin-bottom: 20px;
+}
+
+.player-item {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+/* Game Screen */
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.scores {
+    display: flex;
+    gap: 20px;
+}
+
+.score-container {
+    text-align: center;
+}
+
+.score {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.timer {
+    font-size: 24px;
+    font-weight: bold;
+    background: #f8f9fa;
+    padding: 5px 15px;
+    border-radius: 5px;
+}
+
+.timer.urgent {
+    color: #e74c3c;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.grid-cell {
+    aspect-ratio: 1;
+    background: #3498db;
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: transform 0.1s, background-color 0.3s;
+}
+
+.grid-cell:hover {
+    transform: scale(1.05);
+    background-color: #2980b9;
+}
+
+.word-input-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.word-input-container input {
+    flex-grow: 1;
+}
+
+.word-input-container button {
+    margin-top: 0;
+}
+
+.word-list {
+    max-height: 200px;
+    overflow-y: auto;
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.word-list h3 {
+    margin-top: 0;
+}
+
+.word-list ul {
+    list-style-type: none;
+    padding-left: 10px;
+}
+
+.word-list li {
+    margin-bottom: 5px;
+    padding: 5px;
+    border-radius: 3px;
+}
+
+.word-list li:nth-child(odd) {
+    background: rgba(52, 152, 219, 0.1);
+}
+
+/* Game Over Screen */
+.player-result {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+.player-result.you {
+    border-left: 5px solid #3498db;
+}
+
+.player-result.winner {
+    background: rgba(46, 204, 113, 0.1);
+}
+
+.player-result h4 {
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.player-result ul {
+    list-style-type: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.player-result li {
+    background: #fff;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 14px;
+    border: 1px solid #ddd;
+}
+
+/* Messages */
+.message {
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 15px;
+    text-align: center;
+}
+
+.message.error {
+    background-color: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+}
+
+.message.success {
+    background-color: rgba(46, 204, 113, 0.1);
+    color: #2ecc71;
+}
+
+.message.info {
+    background-color: rgba(52, 152, 219, 0.1);
+    color: #3498db;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+    
+    .grid-cell {
+        font-size: 20px;
+    }
+    
+    .game-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    
+    .scores {
+        justify-content: space-between;
+    }
+}
