@@ -175,7 +175,7 @@ def start_game(room_code):
     game = games[room_code]
     game['status'] = 'playing'
     game['grid'] = generate_grid()
-    game['round_end_time'] = time.time() + 60  # 60 seconds round
+    game['round_end_time'] = time.time() + 120  # 120 seconds round (2 minutes)
     
     # Reset player scores and words
     for player in game['players'].values():
