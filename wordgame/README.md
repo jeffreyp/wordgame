@@ -6,7 +6,7 @@ WordGrid is a real-time two player word game where players compete to find words
 
 1. Create a new game or join an existing one with a room code
 2. Each game features a randomly generated 4x4 grid of letters
-3. Players have 60 seconds to find as many valid English words as possible
+3. Players have 120 seconds to find as many valid English words as possible
 4. Words must be at least 3 letters long
 5. Longer words are worth more points
 6. Words found by both players are cancelled out
