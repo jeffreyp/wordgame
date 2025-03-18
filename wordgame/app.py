@@ -25,17 +25,31 @@ player_rooms = {}
 english_words = set(word.lower() for word in nltk_words.words() if len(word) >= 3)
 
 def generate_grid(size=4):
-    """Generate a random grid of letters"""
+    """Generate a random grid of letters with no duplicates"""
     # Include more vowels to make grid more playable
     vowels = 'aeiou'
     consonants = ''.join(c for c in string.ascii_lowercase if c not in vowels)
     
-    # Distribution: ~40% vowels, 60% consonants
-    letters = random.choices(vowels, k=int(size*size*0.4)) + random.choices(consonants, k=int(size*size*0.6))
+    # Create a list of all available letters
+    all_letters = list(string.ascii_lowercase)
     
-    # Ensure we have exactly size*size letters
-    while len(letters) < size*size:
-        letters.append(random.choice(string.ascii_lowercase))
+    # Select unique letters with preference for vowels
+    letters = []
+    # Target number of vowels (about 40% of the grid)
+    vowel_count = int(size*size*0.4)
+    
+    # First select vowels
+    available_vowels = [c for c in all_letters if c in vowels]
+    random.shuffle(available_vowels)
+    letters.extend(available_vowels[:vowel_count])
+    
+    # Remove selected vowels from available letters
+    for letter in letters:
+        all_letters.remove(letter)
+    
+    # Fill remaining spaces with consonants or other letters
+    random.shuffle(all_letters)
+    letters.extend(all_letters[:size*size - len(letters)])
     
     # Shuffle and reshape into grid
     random.shuffle(letters)
