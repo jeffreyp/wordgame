@@ -2,6 +2,8 @@
 
 WordGrid is a real-time two player word game where players compete to find words in a 4x4 grid of letters. The game is playable over a network on both desktop and mobile devices.
 
+Try it [here](https://wordgame-muddy-bird-2759.fly.dev)!
+
 ## How to Play
 
 1. Create a new game or join an existing one with a room code
